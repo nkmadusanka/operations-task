@@ -79,5 +79,6 @@ healthcheck:
 ## Why docker compose
 Docker is the most user-friendly, and a feature rich container runtime currently available. Docker compose is the
 container orchestration tool for Docker. By defining a desired state of one or more containers using a human readable declarative syntax
-we can easily orchestrate complex environments very easily, and the same container environments can be duplicated in any
-OS/platform without worrying about any underlying OS differences and dependencies( in most cases :) ). 
+we can orchestrate complex environments very easily, and the same container environments can be duplicated in any
+OS/platform without worrying about any underlying OS differences and dependencies( in most cases :) ). Developers no need to worry about
+how to set up environments, applications, network configuration etc. because it all taken care of by containers and container orchestration.
