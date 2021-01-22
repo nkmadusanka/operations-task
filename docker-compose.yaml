@@ -1,0 +1,36 @@
+services:
+  rates:
+    build:
+      context: ./rates
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - 3000:3000
+    networks:
+      - app-layer
+      - db-layer
+  db:
+    image: postgres:9.6
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/rates.sql:/docker-entrypoint-initdb.d/rates.sql
+    healthcheck:
+      test: psql -h localhost -U postgres -c "SELECT 'alive'"
+      interval: 10s
+      retries: 3
+    networks:
+      db-layer:
+networks:
+  db-layer: {}
+  app-layer: {}

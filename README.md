@@ -1,59 +1,45 @@
 # Practical section
 
-## Premise
+## API Service
+This repository contains `Rates API` which provide average rates between two ports. The API fetches data from a postgres 
+database. For development purpose sample database schema and a dataset can be found in the `db` directory.
 
-Provided are two simplified parts of the same application environment: A database dump and an API service. Your task is to automate setting up the development environment in a reliable and testable manner using "infrastructure as code" principles.
+## Running the API locally
+To ease the development and testing of the service, we have added a `docker compose` instruction file which boostrap a
+postgres database with some dummy data and run the API. You must install `Docker Desktop` for Mac/Windows or both `Docker` 
+runtime and `docker-compose` tool for any other platform.
+Installation instructions can be found in [Docker installation guide](https://docs.docker.com/engine/install/) and
+[dokcer-compose installation guide](https://docs.docker.com/compose/install/)
 
-The goal is to end up with a limited set of commands that would install the different environments and run them using containers. You can use any software that you find suitable for the task. The code should come with instructions on how to run it and deploy it to arbitrary targets; whether it is deployed locally, towards physical machines, or towards virtual nodes in the cloud.
+API locates the database configuration via environment variables and the `.env` file contains default values for each variable.
+You may change the `.env` file as you fit but it not required to do so.
 
-## Running the database
+**NOTE: DB\_HOST environment variable value MUST match with the `docker compose` database service configuration.**
 
-There’s an SQL dump in `db/rates.sql` that needs to be loaded into a PostgreSQL 9.6 database.
+All `docker-compose` commands must be run from the project root directory.
 
-After installing the database, the data can be imported through:
-
+### Build
 ```
-createdb rates
-psql -h localhost -U postgres < db/rates.sql
-```
-
-You can verify that the database is running through:
-
-```
-psql -h localhost -U postgres -c "SELECT 'alive'"
-```
-
-The output should be something like:
-
-```
- ?column?
-----------
- alive
-(1 row)
+docker-compose build
 ```
 
-## Running the API service
-
-Start from the `rates` folder.
-
-### 1. Install prerequisites
-
+### Run
 ```
-DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y python-pip
-pip install -U gunicorn
-pip install -Ur requirements.txt
+docker-compose up # Runs the containers in forground, you can see the container logs in the same command window
+docker-compose up -d # Runs the container in the background
 ```
 
-### 2. Run the application
+### Some useful docker-compose commands
 ```
-gunicorn -b :3000 wsgi
+docker-compose logs # view all service logs
+docker-compose logs <compose service name> # view logs related to given service
+docker-compose exec <compose service name> /bin/bash # log into running contianer for debug purpose
+docker-compose stop # Stops all containers running as part of the docker compose configuration
 ```
 
-The API should now be running on [http://localhost:3000](http://localhost:3000).
-
-### 3. Test the application
-
-Get average rates between ports:
+## Testing the application locally
+By default, the API is runs on [http://localhost:3000](http://localhost:3000). You can verify the functionality by using
+a request as below,
 ```
 curl "http://127.0.0.1:3000/rates?date_from=2016-01-01&date_to=2016-01-31&orig_code=CNGGZ&dest_code=EETLL"
 ```
@@ -77,47 +63,21 @@ The output should be something like this:
 }
 ```
 
+## Debugging container issues
+### Rates API container exits abnormally during startup
+Rates API startup depends on the postgres database. If the database is not accepting connections when the API container starts
+it will exit with a python exception. If you encounter this issue, try increasing the number of `retries`
+in the database service health check configuration in the `docker-compose.yaml` file.
 
-## Extra details
+```
+healthcheck:
+  test: psql -h localhost -U postgres -c "SELECT 'alive'"
+  interval: 10s
+  retries: 3 # increase this
+``` 
 
-* **Provide the solution as a public git repository that can easily be cloned by our development team.**
-
-* The configuration file `rates/config.py` has some defaults that will most likely change depending on the solution. It would be beneficial to have a way of more dynamically pass in config values.
-
-* List and describe the tool(s) used, and why they were chosen for the task.
-
-* Provide any instructions needed to run the automation solution in `README.md`.
-
-* If you have any questions, please don't hesitate to contact us at tech-recruitment@xeneta.com
-
-# Theoretical section
-In this section we are seeking high-level answers, use a maximum of couple of paragraphs to answer the questions.
-
-## Extended service
-
-Imagine that for providing data to fuel this service, you need to receive and insert big batches of new prices, ranging within tens of thousands of items, conforming to a similar format. Each batch of items needs to be processed together, either all items go in, or none of them does.
-
-Both the incoming data updates and requests for data can be highly sporadic - there might be large periods without much activity, followed by periods of heavy activity.
-
-High availability is a strict requirement from the customers.
-
-* How would you design the system?
-* How would you set up monitoring to identify bottlenecks as the load grows?
-* How can those bottlenecks be addressed in the future?
-
-Provide a high-level diagram, along with a paragraphs describing the choices you've made and what factors do you need to take into consideration.
-
-## Additional questions
-
-Here are a few possible scenarios where the system requirements change or the new functionality is required:
-
-1. The batch updates have started to become very large, but the requirements for their processing time are strict.
-
-2. Code updates need to be pushed out frequently. This needs to be done without the risk of stopping a data update already being processed, nor a data response being lost.
-
-3. For development and staging purposes, you need to start up a number of scaled-down versions of the system.
-
-Please address *at least* one of the situations. Please describe:
-
-- Which parts of the system are the bottlenecks or problems that might make it incompatible with the new requirements?
-- How would you restructure and scale the system to address those?
+## Why docker compose
+Docker is the most user-friendly, and a feature rich container runtime currently available. Docker compose is the
+container orchestration tool for Docker. By defining a desired state of one or more containers using a human readable declarative syntax
+we can easily orchestrate complex environments very easily, and the same container environments can be duplicated in any
+OS/platform without worrying about any underlying OS differences and dependencies( in most cases :) ). 
