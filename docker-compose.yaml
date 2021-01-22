@@ -30,7 +30,7 @@ services:
       interval: 10s
       retries: 3
     networks:
-      db-layer:
+      - db-layer
 networks:
   db-layer: {}
   app-layer: {}
