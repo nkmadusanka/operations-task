@@ -2,6 +2,24 @@
 
 This document explains the design of the data pipeline which import (optionally transform and/or sanitize) price data into the database.
 
+# Table of Content
+* [Assumptions and Considerations](#assumptions-and-considerations)
+* [Solution Design](#solution-design)
+  * [Components](#components)
+     * [Component 1: File storage](#component-1-file-storage)
+     * [Component 2: Data transformation Lambda trigger &amp; Component 3: Fargate task running the transformation](#component-2-data-transformation-lambda-trigger--component-3-fargate-task-running-the-transformation)
+     * [Component 4: Data loader SQS queue](#component-4-data-loader-sqs-queue)
+     * [Component 5: Lambda function which runs the data loader Fargate task](#component-5-lambda-function-which-runs-the-data-loader-fargate-task)
+     * [Component 6: Data loader Fargate task](#component-6-data-loader-fargate-task)
+     * [Component 7: Existing AWS RDS Postgres database](#component-7-existing-aws-rds-postgres-database)
+* [Q&amp;A](#qa)
+  * [How would you set up monitoring to identify bottlenecks as the load grows and how can those bottlenecks be addressed in the future?](#how-would-you-set-up-monitoring-to-identify-bottlenecks-as-the-load-grows-and-how-can-those-bottlenecks-be-addressed-in-the-future)
+  * [The batch updates have started to become very large, but the requirements for their processing time are strict.](#the-batch-updates-have-started-to-become-very-large-but-the-requirements-for-their-processing-time-are-strict)
+  * [Code updates need to be pushed out frequently. This needs to be done without the risk of stopping a data update already being processed, nor a data response being lost.](#code-updates-need-to-be-pushed-out-frequently-this-needs-to-be-done-without-the-risk-of-stopping-a-data-update-already-being-processed-nor-a-data-response-being-lost)
+  * [For development and staging purposes, you need to start up a number of scaled-down versions of the system.](#for-development-and-staging-purposes-you-need-to-start-up-a-number-of-scaled-down-versions-of-the-system)
+  * [Which parts of the system are the bottlenecks or problems that might make it incompatible with the new requirements?](#which-parts-of-the-system-are-the-bottlenecks-or-problems-that-might-make-it-incompatible-with-the-new-requirements)
+  * [How would you restructure and scale the system to address those?](#how-would-you-restructure-and-scale-the-system-to-address-those)
+
 # Assumptions and Considerations
 1. The pipeline runs in the AWS cloud and there is no need to go for a cloud-agnostic solution right now
 2. Containers are a strategic choice over standard virtual machines
