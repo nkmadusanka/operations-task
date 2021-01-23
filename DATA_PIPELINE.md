@@ -1,6 +1,6 @@
 # Data Pipeline
 
-This document explains the design of the data pipeline which import (optionally transform and/or sanitize) price data into the database.
+This document describes the design of the data pipeline which import (optionally transform and/or sanitize) price data into the database.
 
 # Table of Content
 * [Assumptions and Considerations](#assumptions-and-considerations)
