@@ -1,0 +1,1 @@
+![data pipeline diagram](./data-pipeline.svg)

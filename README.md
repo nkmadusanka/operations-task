@@ -82,3 +82,7 @@ container orchestration tool for Docker. By defining a desired state of one or m
 we can orchestrate complex environments very easily, and the same container environments can be duplicated in any
 OS/platform without worrying about any underlying OS differences and dependencies( in most cases :) ). Developers no need to worry about
 how to set up environments, applications, network configuration etc. because it all taken care of by containers and container orchestration.
+
+# Theoretical section
+
+Refer to [Data Pipeline Documentation](./DATA_PIPELINE.md)
