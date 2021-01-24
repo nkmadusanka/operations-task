@@ -19,6 +19,7 @@ This document describes the design of the data pipeline which import (optionally
   * [For development and staging purposes, you need to start up a number of scaled-down versions of the system.](#for-development-and-staging-purposes-you-need-to-start-up-a-number-of-scaled-down-versions-of-the-system)
   * [Which parts of the system are the bottlenecks or problems that might make it incompatible with the new requirements?](#which-parts-of-the-system-are-the-bottlenecks-or-problems-that-might-make-it-incompatible-with-the-new-requirements)
   * [How would you restructure and scale the system to address those?](#how-would-you-restructure-and-scale-the-system-to-address-those)
+* [More Design Options](#more-design-options)
 
 # Assumptions and Considerations
 1. The pipeline runs in the AWS cloud and there is no need to go for a cloud-agnostic solution right now
@@ -111,14 +112,14 @@ impact to the database measured using the CloudWatch alarm status(es) and metric
 Read replicas MUST be enabled. Performance-related CloudWatch alarms will be created using the available metrics in CloudWatch.
 We can enable SNS notifications to notify us of any performance issues, and optionally set up an SNS notification to trigger
 a Lambda function ( component 8 ) that enables/disables the Lambda function ( component 5 ) that runs the data loader Fargate task.
-If setup, it will ensure that the data loading Fargate task will not be run unnecessarily when there is an ongoing issue with the database.
+If set up, it will ensure that the data loading Fargate task will not be run unnecessarily when there is an ongoing issue with the database.
 Furthermore, it can act as a circuit breaker for the operations team to temporarily disable data loading tasks.
 
 We MUST ensure that any application that reads the data from the database uses the read replicas instead of the master database if they can
 tolerate a couple of seconds of stale data until the asynchronous replication catches up with the master.
 Master database MUST be used exclusively for write operations and any reads that require the latest up-to-date data.
 
-By default, AWS RDS provides two database URLs for an RDS cluster,
+By default, AWS RDS provides two database URLs for any cluster,
 - One for the master that support read/write
 - One for slaves that support read-only
 
@@ -138,6 +139,9 @@ to ensure smooth operation.
 - Better to collect statistics of the jobs such as file size, the number of records, time took to transform/sanitize data files, time took to
 load the data files into the database, etc. so that we can identify any emerging patterns which can be indications of a degrading system. ie:
 increased data loading times may indicate that the database is going into a degraded state.
+- Lambda logs must be analyzed for any failures - better to automate alerting using CloudWatch Events
+- Monitor Lambda invocations for any anomalies such as unexpected invocation counts
+- Monitor Lambda resource usage and execution times to understand further optimizations
 - Learn from the mistakes and incidents - keep refining monitoring and alerting
 
 ## The batch updates have started to become very large, but the requirements for their processing time are strict.
@@ -156,7 +160,7 @@ an optimized approach to load the data.
 
 ## Code updates need to be pushed out frequently. This needs to be done without the risk of stopping a data update already being processed, nor a data response being lost.
 
-The system by design is loosely coupled. Any change to a component has very little impact on other components. Updates to any Lambda function do not stop running ones and new code will be pick up
+The system by design is loosely coupled. Any change to a component has zero to very little impact on other components. Updates to any Lambda function do not stop running ones and new code will be pick up
 during the next run. We use containers to the data related tasks. We can update the containers while they are being used for the running tasks.
 Running tasks will continue to run with the old version of the container. A new and updated container will be picked up during the next run of the task.
 
@@ -177,3 +181,10 @@ configuration frequently based on monitoring information.
 ## How would you restructure and scale the system to address those?
 
 Refer above
+
+# More Design Options
+
+1. Using AWS native ETL solutions - AWS Glue
+2. Using AWS Step functions to orchestrate each pipeline step and using on-demand resources
+3. Using AWS batch with AWS Step functions
+4. Using a datastore like DynamoDB in conjunction with semi on-demand resources
