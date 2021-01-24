@@ -139,7 +139,7 @@ to ensure smooth operation.
 - Better to collect statistics of the jobs such as file size, the number of records, time took to transform/sanitize data files, time took to
 load the data files into the database, etc. so that we can identify any emerging patterns which can be indications of a degrading system. ie:
 increased data loading times may indicate that the database is going into a degraded state.
-- Lambda logs must be analyzed for any failures - better to automate alerting using CloudWatch Events
+- Lambda logs must be analyzed for any failures - better to set up alerts using CloudWatch Events or any other monitoring solution
 - Monitor Lambda invocations for any anomalies such as unexpected invocation counts
 - Monitor Lambda resource usage and execution times to understand further optimizations
 - Learn from the mistakes and incidents - keep refining monitoring and alerting
